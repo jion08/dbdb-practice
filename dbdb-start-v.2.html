@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>수강신청 연습</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 0; margin: 0; }
+        h1 { background: #6b5db7; color: white; padding: 10px; text-align: center; margin: 0; font-size: 24px; position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; }
+        #time-display { margin-right: 20px; font-size: 20px; }
+        #sidebar { width: 200px; background: #f0f0f0; position: fixed; height: 100%; padding: 10px; box-shadow: 2px 0 5px rgba(0,0,0,0.2); }
+        #content { margin-left: 220px; padding: 20px; }
+        button { display: black; width: 100%; margin: 0px 0; padding: 10px; background: #f5f5f5; color: #787878; border: 20%; border-color: #dedede; border-radius: 0px; cursor: pointer; }
+        button.cancel { background: #de7177; margin: 10px 0; color: white; border: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: center; font-size: 14px; }
+        th { background: #eeeeee; position: sticky; top: 44px; z-index: 5; }
+        .selected { background: #c8e6c9; }
+        th:nth-child(1), td:nth-child(1) { width: 1.25%; }
+        th:nth-child(2), td:nth-child(2) { width: 2.5%; }
+        th:nth-child(3), td:nth-child(3) { width: 10%; }
+        th:nth-child(4), td:nth-child(4) { width: 2%; }
+        th:nth-child(5), td:nth-child(5) { width: 2%; white-space: nowrap; line-height: 1.2; }
+        th:nth-child(6), td:nth-child(6) { width: 9%; white-space: nowrap; line-height: 1.2; }
+h1 {
+    background: #6b5eb8;
+    color: white;
+    padding: 16px;
+    margin: 0;
+    font-size: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+
+    /* 가운데 정렬을 위한 Flexbox */
+    display: flex;
+    justify-content: center; /* 제목 가운데 정렬 */
+    align-items: center;
+}
+
+/* 시간 표시 오른쪽 고정 */
+#time-display {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+}
+
+    </style>
+    <script>
+function updateTime() {
+    let fakeNow = new Date();
+    fakeNow.setHours(8, 58, 0, 0); // 가상 시간 08:58:00 시작
+    const targetTime = new Date(fakeNow.getTime() + 2 * 60 * 1000); // 9시 타겟 시간
+    let isLocked = false;
+    let hasConfirmed = false; // '확인' 성공 여부 체크
+    let timeLimit = 1300; // 1.5초 제한 (1500ms)
+
+    // 가상 시간 계속 흐르게 하기
+    setInterval(() => {
+        fakeNow.setSeconds(fakeNow.getSeconds() + 1);
+        document.getElementById("time-display").innerText =
+            "가상 시간(실제 신청화면은 표시X): " +
+            String(fakeNow.getHours()).padStart(2, "0") +
+            ":" +
+            String(fakeNow.getMinutes()).padStart(2, "0") +
+            ":" +
+            String(fakeNow.getSeconds()).padStart(2, "0");
+
+        // 9시 정각에 신청 버튼 생성 (한 번만 실행)
+        if (fakeNow >= targetTime && !isLocked) {
+            document.querySelectorAll(".status").forEach((status) => {
+                if (status.innerText === "-") {
+                    status.innerHTML = `<button style="width: 55px; height: 30px; font-size: 15px; line-height: 25px; padding: 0; border: none; box-sizing: border-box; background: #4379F2; color: white; border-radius: 5px; cursor: pointer; display: block; margin: 0 auto;" onclick="apply(this)">신청</button>`;
+                }
+            });
+
+            // 1.5초 후 남은 버튼 자동 마감 처리
+            setTimeout(() => {
+                if (!hasConfirmed) {
+                    document.querySelectorAll(".status button").forEach((btn) => {
+                        btn.parentElement.innerHTML = `<span style="color: black; ">마감</span>`;
+                    });
+
+                    // 정원 전부 28/28로 변경
+                    document.querySelectorAll("tbody tr").forEach((row) => {
+                        row.children[3].innerText = "28/28";
+                    });
+                }
+            }, timeLimit);
+
+            isLocked = true; // 더 이상 버튼 생성 X
+        }
+    }, 1000);
+
+    // 신청 버튼 클릭 함수 (확인 → 성공/실패 처리)
+    window.apply = function (button) {
+        if (hasConfirmed) return; // 이미 성공한 상태면 중복 클릭 방지
+
+        let clickTime = new Date().getTime(); // 클릭 순간 시간 기록
+
+        if (confirm("신청하시겠습니까?")) {
+            let confirmTime = new Date().getTime();
+            let timeTaken = confirmTime - clickTime;
+
+            if (timeTaken <= timeLimit) {
+                hasConfirmed = true; // 성공 체크
+                button.parentElement.innerHTML = `<span style="color: red; ">취소</span>`;
+
+                // 신청 완료 알림
+                alert("신청이 완료되었습니다!");
+
+                // 나머지 신청 버튼 전부 마감 처리
+                document.querySelectorAll(".status button").forEach((btn) => {
+                    if (btn !== button) {
+                        btn.parentElement.innerHTML = `<span style="color: black; ">마감</span>`;
+                    }
+                });
+
+                // 정원 전부 28/28로 변경
+                document.querySelectorAll("tbody tr").forEach((row) => {
+                    row.children[3].innerText = "28/28";
+                });
+            } else {
+                alert("정원 초과되었습니다. 신청 실패!");
+                button.parentElement.innerHTML = `<span style="color: black; ">정원 초과</span>`;
+            }
+        }
+    };
+}
+
+    </script>
+<!-- User identification start -->
+    <script>
+    window.usetifulTags = {      
+         userId : "EXAMPLE_USER_ID",  // This identifies the user and should be unique. Change it
+         firstName : "EXAMPLE_FIRST_NAME",  // This property defines user’s first name. Change it
+         lastName : "EXAMPLE_LAST_NAME" // This property defines user’s last name. Change it     
+    };</script>
+  <!-- User identification end -->
+<!-- Usetiful script start -->
+  <script>
+  (function (w, d, s) {
+      var a = d.getElementsByTagName('head')[0];
+      var r = d.createElement('script');
+      r.async = 1;
+      r.src = s;
+      r.setAttribute('id', 'usetifulScript');
+      r.dataset.token = "ec9f1c2c1a8529aaa854f10b0cd1af16";  // This is your unique USETIFUL token. Don’t change it.
+      a.appendChild(r);
+    })(window, document, "https://www.usetiful.com/dist/usetiful.js");</script>
+<!-- Usetiful script end -->
+
+</head>
+<body onload="updateTime()">
+    <h1>
+        자유학기제 v
+        <span id="time-display">가상 시간(실제 신청화면은 표시X): 08:58:00</span>
+    </h1>
+    <div id="sidebar">
+        <p><strong>홍길동 님</strong></p>
+        <button class="cancel">신청조회</button>
+        <button>홈으로</button>
+        <button>신청조회</button>
+        <button>설문참여</button>
+        <button>알림보기</button>
+    </div>
+    <div id="content">
+        <h3>스포츠동아리 > 1학기</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>연번</th>
+                    <th>신청상태</th>
+                    <th>강좌</th>
+                    <th>현/정원</th>
+                    <th>운영기간</th>
+                    <th>강의시간</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>13</td><td class="status">-</td><td>경쟁협동 보드게임3</td><td>0/28</td><td>2025-03-12~<br>2025-06-18</td><td>수:5-6교시(스동)</td></tr>
+                <tr><td>12</td><td class="status">-</td><td>농구3</td><td>0/28</td><td>2025-03-12~<br>2025-06-18</td><td>수:5-6교시(스동)</td></tr>
+                <tr><td>11</td><td class="status">-</td><td>배드민턴3</td><td>0/28</td><td>2025-03-12~<br>2025-06-18</td><td>수:5-6교시(스동)</td></tr>
+                <tr><td>10</td><td class="status">-</td><td>보드게임스포츠3</td><td>0/28</td><td>2025-03-12~<br>2025-06-18</td><td>수:5-6교시(스동)</td></tr>
+                <tr><td>9</td><td class="status">-</td><td>볼링3</td><td>0/28</td><td>2025-03-12~<br>2025-06-18</td><td>수:5-6교시(스동)</td></tr>
+                <tr><td>8</td><td class="status">-</td><td>스포츠 스태킹3</td><td>0/28</td><td>2025-03-12~<br>2025-06-18</td><td>수:5-6교시(스동)</td></tr>
+                <tr><td>7</td><td class="status">-</td><td>점핑다이어트3</td><td>0/28</td><td>2025-03-12~<br>2025-06-18</td><td>수:5-6교시(스동)</td></tr>
+                <tr><td>6</td><td class="status">-</td><td>축구3</td><td>0/28</td><td>2025-03-12~<br>2025-06-18</td><td>수:5-6교시(스동)</td></tr>
+                <tr><td>5</td><td class="status">-</td><td>케이팝댄스3</td><td>0/28</td><td>2025-03-12~<br>2025-06-18</td><td>수:5-6교시(스동)</td></tr>
+                <tr><td>4</td><td class="status">-</td><td>클라이밍3</td><td>0/28</td><td>2025-03-12~<br>2025-06-18</td><td>수:5-6교시(스동)</td></tr>
+                <tr><td>3</td><td class="status">-</td><td>탁구3</td><td>0/28</td><td>2025-03-12~<br>2025-06-18</td><td>수:5-6교시(스동)</td></tr>
+                <tr><td>2</td><td class="status">-</td><td>홈트레이닝3가</td><td>0/28</td><td>2025-03-12~<br>2025-06-18</td><td>수:5-6교시(스동)</td></tr>
+                <tr><td>1</td><td class="status">-</td><td>홈트레이닝3나</td><td>0/28</td><td>2025-03-12~<br>2025-06-18</td><td>수:5-6교시(스동)</td></tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+    <!-- Usetiful script start -->
+  <script>
+  (function (w, d, s) {
+      var a = d.getElementsByTagName('head')[0];
+      var r = d.createElement('script');
+      r.async = 1;
+      r.src = s;
+      r.setAttribute('id', 'usetifulScript');
+      r.dataset.token = "ec9f1c2c1a8529aaa854f10b0cd1af16";  // This is your unique USETIFUL token. Don’t change it.
+      a.appendChild(r);
+    })(window, document, "https://www.usetiful.com/dist/usetiful.js");</script>
+<!-- Usetiful script end -->
+</html>
